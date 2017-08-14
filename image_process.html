@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>图片处理器</title>
+	<style>
+		body{
+			margin:0;
+			padding:20px;
+		}
+		.img-container{
+			height:520px;
+			width:360px;
+			border:solid 1px #666;
+			box-shadow:2px 2px 2px 2px #111;
+			box-sizing:content-box;
+			overflow:auto;
+			position:relative;
+		}
+		 p{
+			text-align:center;
+			font-weight:bolder;
+			font-size:25px;
+			font-family:"微软雅黑";
+			border-bottom:solid 1px grey;
+		}
+		.img-container img{
+			max-width:360px;
+			margin:0 auto;
+			display:inline-block;
+			position:absolute;
+		
+		}
+		.img-container p{
+			margin:0;
+		}
+		.processed_img{
+            width:360px;
+            height:520px;
+            padding:0;
+            border:solid 1px #666;
+            overflow:auto;
+			box-shadow:2px 2px 2px 2px #111;
+			box-sizing: content-box;
+			margin-left:30px;
+		}
+		.processed_img p{
+			width:350px;
+			margin:0;
+			box-sizing:border-box;
+		}
+		.canvas{
+	
+			
+		}
+		.left{
+			float:left;
+		}
+		.control_panel{
+			border:dashed 3px #228833;
+			margin-left:20px;
+			padding:30px;
+		}
+
+		.control_panel input[type="file"]{
+			display:none;
+		}
+
+		.control_panel label[for="file_input"]{
+			display:block;
+			min-width:120px;
+			min-height:30px;
+			border:solid 1px black;
+			background-color:red;
+			border-radius:5px;
+			margin:20px 30px 30px 30px;
+
+			font-size:20px;
+			cursor:pointer;
+		}
+		.control_panel #takePicture{
+			text-align:center;
+			display:block;
+			min-width:120px;
+			min-height:30px;
+			border:solid 1px black;
+			background-color:red;
+			border-radius:5px;
+			margin:20px 30px 30px 30px;
+			font-size:20px;
+			cursor:pointer;
+
+
+		}
+	
+		.control_panel .effect
+			{
+				border:solid 1px grey;
+				min-width:50px;
+				min-height:30px;
+				font-size:18px;
+				display:inline-block;
+				float:left;
+				border:solid 3px #999;
+				box-shadow:0 0 3px #333;
+				margin-left:20px;
+				cursor:pointer;
+			}
+			.control_panel .effect:hover{
+				box-shadow:0 0 3px 3px #ddd;
+			}
+		#invert{
+			display:block;
+			clear:both;
+		}
+		#camera{
+			display:none;
+		}
+		#camera div{
+			height:30px;
+			width:100px;
+			background-color:lightblue;
+			color:red;
+			text-align:center;
+			cursor:pointer;
+			border-radius:3px;
+			box-shadow:0 0 2px 2px #fff;
+			transition: all 0.1s;
+
+		}
+		#camera div:hover{
+			box-shadow:0 0 2px 4px yellow;
+			width:110px;
+			height:40px;
+		}
+		.control_panel #download
+			{
+				clear:both;
+				display:block;
+				border:solid 1px grey;
+				width:150px;
+				height:30px;
+				font-size:25px;
+				
+				box-shadow:0 0 3px #333;
+				padding:10px;
+				cursor:pointer;
+				text-decoration:none;
+				text-align:center;
+				margin:10px auto;
+				position:relative;
+				top:30px;
+
+			}
+			.control_panel #download:hover
+				{
+
+					box-shadow:0 0 3px #900;
+					font-weight:bolder;
+				}
+			.tips{
+				border:dashed 4px red;
+				box-shadow:3px 3px 3px purple;
+				width:400px;
+				margin-top:20px;
+				margin-left:20px;
+				padding:30px;
+				float:left;
+
+			}
+	</style>
+</head>
+<body>
+	<div class="img-container left">
+		<p >原图</p>
+		<canvas  id="unprocessedimg"></canvas>
+
+	</div>
+	<div class="processed_img left">
+		<p>处理后图像</p>
+		<canvas id="canvas"></canvas>
+	</div>
+	<div id="camera">
+		<video src="" id="video"></video>
+		<div id="shooting_confirm">确认</div>
+	</div>
+	<div class="control_panel left">
+		<input type="file" id="file_input" />
+		<label for="file_input" class="left">查找本地文件</label>
+		
+		<input type="button" id="takePicture" value="拍照" class="left" />
+		<input type="button" value="反色" id="invert"   class="effect"/>
+		<input type="button" value="灰度" id="gray"  class="effect" />
+		<input type="button" value="黑白" id="blackWhite"  class="effect" />
+		<input type="button" value="浮雕" id="embossment"  class="effect" />
+		<a href="" donwload="true" id="download" >下载</a>
+	</div>
+	<div class="tips">
+		<p>
+			您可以点击绿色虚线框内的灰色按钮，对图片进行处理，之后点击下载按钮下载。图片可以选用本地文件，也可以拍照。
+		</p>
+	</div>
+
+	<script>
+		var embossment=document.getElementById("embossment");
+		var blackWhite=document.getElementById("blackWhite");
+		var download=document.getElementById("download");
+		var invert=document.getElementById("invert");
+		var gray=document.getElementById("gray");
+		var shooting_confirm=document.getElementById("shooting_confirm");
+		var file_input=document.getElementById("file_input");
+
+		var canvasWidth=360;
+
+
+		var unprocessedimg=document.getElementById("unprocessedimg");
+		unprocessedimg.width=canvasWidth;
+		unprocessedimg.height=480;
+		var ctx_unprocessedimg=unprocessedimg.getContext("2d");
+
+
+		var canvas=document.getElementById("canvas");
+		canvas.width=canvasWidth;
+		canvas.height=480;
+		var ctx=canvas.getContext("2d");
+
+		var takePicture=document.getElementById("takePicture");
+		var video=document.getElementById("video");
+		var camera=document.getElementById("camera");
+
+		
+		
+		var imageData=null;
+		var data=null;
+		
+		file_input.onchange=function()
+			{
+				var file=file_input.files[0];
+				var reader=new FileReader();
+				reader.readAsDataURL(file);
+				reader.onload=function(e){
+					var img=new Image();
+					img.src=e.target.result;
+					img.onload=function(){
+						scale_pic(img.width,img.height);
+
+						ctx_unprocessedimg.clearRect(0,0,canvasWidth,unprocessedimg.height);
+						ctx_unprocessedimg.drawImage(img,0,0,canvasWidth,unprocessedimg.height);
+
+						imageData=ctx_unprocessedimg.getImageData(0,0,canvasWidth,unprocessedimg.height);
+						data=imageData.data;
+
+					}
+
+				}
+			
+			}
+		takePicture.onclick=function(){
+			var constraint={audio:false,video:true};
+			navigator.getMedia=navigator.getUserMedia||navigator.mozGetUserMedia||navigator.webkitGetUserMedia||navigator.msGetUserMedia;
+			navigator.getMedia(constraint,function(stream){
+				
+				camera.style.display="block";
+				camera.style.position="absolute";
+				camera.style.top="20px";
+				camera.style.left="20px";
+				camera.style.width="752px";
+				camera.style.background="#777";
+				if(navigator.mediaDevices)
+				{
+					video.srcObject=stream;
+					video.play();
+				}
+				else
+				{
+					var vendorURL=window.URL||window.webkitURL;
+					video.src=vendorURL.createObjectURL(stream);
+					video.play();
+				}
+			},function(err) {console.log(err.name+":"+err.message);})
+			shooting_confirm.onclick=function()
+			{
+				
+				scale_pic(video.videoWidth,video.videoHeight);
+
+				ctx_unprocessedimg.clearRect(0,0,canvasWidth,unprocessedimg.height);
+				ctx_unprocessedimg.drawImage(video,0,0,canvasWidth,unprocessedimg.height);
+				camera.style.display="none";
+
+				imageData=ctx_unprocessedimg.getImageData(0,0,canvasWidth,unprocessedimg.height);
+				data=imageData.data;
+
+				video.srcObject.getTracks()[0].stop();
+				
+			}
+            
+		}
+		invert.onclick=function(){
+			
+				var myImageData=ctx_unprocessedimg.createImageData(imageData);
+				var mydata=myImageData.data;
+				
+				for(i=0;i<data.length;i+=4)
+				{
+					mydata[i]=255-data[i];
+					mydata[i+1]=255-data[i+1];
+					mydata[i+2]=255-data[i+2];
+					mydata[i+3]=255;
+					
+				}
+
+				ctx.clearRect(0,0,canvas.width,canvas.height);
+				ctx.putImageData(myImageData,0,0);
+
+		}
+		gray.onclick=function(){
+
+			var myImageData=ctx_unprocessedimg.createImageData(imageData);
+			var mydata=myImageData.data;
+
+	        for(var i=0;i<data.length;i+=4)
+	        {
+	        	var average=(data[i]+data[i+1]+data[i+2])/3;
+	        	mydata[i]=average;
+				mydata[i+1]=average;
+				mydata[i+2]=average;
+				mydata[i+3]=255;
+
+	        }
+	      
+	        ctx.clearRect(0,0,canvas.width,canvas.height);
+			ctx.putImageData(myImageData,0,0);
+
+	 }
+	 	blackWhite.onclick=function()
+		 	{
+		 		var myImageData=ctx_unprocessedimg.createImageData(imageData);
+		 		var mydata=myImageData.data;
+		 		for(var i=0;i<data.length;i+=4)
+		 		{
+		 			var avg=(data[i]+data[i+1]+data[i+2])/3;
+		 			if(avg>=128)
+		 			{
+		 				mydata[i]=255;
+						mydata[i+1]=255;
+						mydata[i+2]=255;
+		 			}
+		 			else
+		 			{
+		 				mydata[i]=0;
+						mydata[i+1]=0;
+						mydata[i+2]=0;
+		 			}
+		 			mydata[i+3]=255;
+		 		}
+		 		ctx.clearRect(0,0,canvas.width,canvas.height);
+		 		ctx.putImageData(myImageData,0,0);
+
+		 	}
+		embossment.onclick=function()
+			{
+				var myImageData=ctx_unprocessedimg.createImageData(imageData);
+		 		var mydata=myImageData.data;
+		 		for(var i=0;i<data.length;i+=4)
+		 		{
+		 			if(i>imageData.width*4)
+			 			{
+			 				mydata[i]=data[i]-data[i-imageData.width*4]+128;
+			 				mydata[i+1]=data[i+1]-data[i+1-imageData.width*4]+128;
+			 				mydata[i+2]=data[i+2]-data[i+2-imageData.width*4]+128;
+			 				mydata[i+3]=255;
+		 				}
+		 		    else
+		 		    {
+		 		    	mydata[i]=data[i]-data[i+imageData.width*4]+128;
+			 			mydata[i+1]=data[i+1]-data[i+1+imageData.width*4]+128;
+			 			mydata[i+2]=data[i+2]-data[i+2+imageData.width*4]+128;
+			 			mydata[i+3]=255;
+		 		    }		
+		 		}
+		 		ctx.clearRect(0,0,canvas.width,canvas.height);
+		 		ctx.putImageData(myImageData,0,0);
+
+			}
+	 download.onclick=function()
+		 {
+		 	var url=canvas.toDataURL("image/jpeg",1.0);
+		 	download.href=url;
+		 	download.download="画布";
+
+		 }
+     function scale_pic(img_width,img_height)
+	     {
+	     	
+	     	var canvasHeight=canvasWidth*(img_height/img_width);
+	     	canvas.height=canvasHeight;
+	     	unprocessedimg.height=canvasHeight;
+	     }
+
+
+
+	 function setup()
+		 {
+		 	var img=new Image();
+			img.src="./img/a.jpg";
+			img.onload=function()
+				{
+					scale_pic(img.width,img.height);
+					ctx_unprocessedimg.clearRect(0,0,canvasWidth,unprocessedimg.height);
+					ctx_unprocessedimg.drawImage(img,0,0,canvasWidth,unprocessedimg.height);
+					imageData=ctx_unprocessedimg.getImageData(0,0,canvasWidth,unprocessedimg.height);
+					data=imageData.data;
+		 		}
+		 }
+	 setup();
+	</script>
+</body>
+</html>
