@@ -10,3 +10,4 @@
 （2）所用图片可以从本地查找，也可拍照。
 （3）能在Chrome、Firefox中下载处理后图片。
 3、注意:
+ 由于浏览器的跨域安全限制，Canvas API的getImageData、createImageData方法只能处理同一域名下的图片，如果不搭建本地服务器,JavaScript是无法使用这两种方法的。
